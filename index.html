@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>8085 Microprocessor Learning Simulator</title>
+<style>
+:root{--bg:#0b1020;--panel:#131c31;--panel2:#18243c;--text:#eef3ff;--muted:#aab7d1;--accent:#69d4ff;--green:#6ee7a8;--border:#2a3856;--red:#ff8585}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#0b1020,#101b30);color:var(--text);font:15px/1.5 system-ui,Segoe UI,Arial,sans-serif}
+header{padding:24px max(18px,calc((100% - 1180px)/2));border-bottom:1px solid var(--border);background:#0b1020dd}
+header h1{margin:0;font-size:clamp(22px,3vw,32px)}header p{margin:5px 0 0;color:var(--muted)}
+main{max-width:1180px;margin:22px auto;padding:0 16px 35px}.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+select,button{font:inherit;border-radius:9px;border:1px solid var(--border);padding:10px 13px;background:var(--panel2);color:var(--text)}
+button{cursor:pointer;font-weight:650}button.primary{background:var(--accent);color:#061421;border-color:var(--accent)}button:hover{filter:brightness(1.1)}
+.layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr);gap:16px}.panel{background:linear-gradient(180deg,var(--panel),#10182a);border:1px solid var(--border);border-radius:14px;padding:17px;min-width:0}
+h2{font-size:17px;margin:0 0 12px}h3{font-size:14px;color:var(--muted);margin:14px 0 8px}
+textarea{width:100%;min-height:255px;resize:vertical;background:#080e1b;color:#d8f5ff;border:1px solid var(--border);border-radius:10px;padding:13px;font:14px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;tab-size:4}
+.note{color:var(--muted);font-size:13px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.reg{background:#0a1222;border:1px solid var(--border);padding:10px;border-radius:9px}.reg span{display:block;color:var(--muted);font-size:12px}.reg strong{font:700 20px ui-monospace,monospace;color:var(--accent)}
+.flags{display:flex;gap:8px;flex-wrap:wrap}.flag{background:#0a1222;border:1px solid var(--border);padding:6px 10px;border-radius:8px;color:var(--muted)}.flag b{color:var(--green)}
+table{border-collapse:collapse;width:100%;font:13px ui-monospace,monospace}th,td{text-align:left;border-bottom:1px solid var(--border);padding:7px 5px}th{color:var(--muted)}
+#log{height:150px;overflow:auto;background:#080e1b;border:1px solid var(--border);border-radius:9px;padding:10px;font:13px/1.6 ui-monospace,monospace;white-space:pre-wrap}
+.status{margin-top:10px;padding:10px;border-radius:9px;background:#0a1222;color:var(--muted);border:1px solid var(--border)}.status.good{color:var(--green)}.status.bad{color:var(--red)}
+footer{max-width:1180px;margin:auto;padding:0 16px 25px;color:var(--muted);font-size:13px}
+@media(max-width:800px){.layout{grid-template-columns:1fr}.cards{grid-template-columns:repeat(4,1fr)}}@media(max-width:430px){.cards{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header><h1>8085 Microprocessor Learning Simulator</h1><p>Learn registers, flags, memory and instruction-by-instruction execution.</p></header>
+<main>
+  <div class="toolbar">
+    <label for="examples">Load example:</label>
+    <select id="examples">
+      <option value="add">8-bit addition</option><option value="sub">8-bit subtraction</option>
+      <option value="largest">Find larger of two numbers</option><option value="count">Increment counter</option>
+      <option value="store">Store result in memory</option>
+    </select>
+    <button id="loadBtn">Load example</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+  <div class="layout">
+    <section class="panel">
+      <h2>Assembly program</h2>
+      <p class="note">Enter one supported instruction per line. Labels and comments beginning with ; are allowed.</p>
+      <textarea id="code" spellcheck="false">MVI A, 25H
+MVI B, 17H
+ADD B
+HLT</textarea>
+      <div class="actions"><button class="primary" id="stepBtn">Step ▶</button><button class="primary" id="runBtn">Run program</button><button id="clearBtn">Clear log</button></div>
+      <div id="status" class="status">Ready. Select Step or Run program.</div>
+      <h3>Execution log</h3><div id="log">Program loaded. Press Step or Run program.</div>
+    </section>
+    <section class="panel">
+      <h2>CPU registers</h2>
+      <div class="cards" id="registers"></div>
+      <h3>Flags</h3>
+      <div class="flags" id="flags"></div>
+      <h3>Program counter</h3><div class="reg"><span>PC (instruction index)</span><strong id="pc">00</strong></div>
+      <h3>Memory (sample addresses)</h3>
+      <table><thead><tr><th>Address</th><th>Value</th><th>Decimal</th></tr></thead><tbody id="memory"></tbody></table>
+      <p class="note">This educational browser simulator supports a small instruction subset; it is not a complete 8085 emulator.</p>
+    </section>
+  </div>
+  <section class="panel" style="margin-top:16px">
+    <h2>GNU SIM 8085 practical workflow</h2>
+    <ol>
+      <li>Choose an example and study the assembly instructions.</li>
+      <li>Use <b>Run program</b> here to understand the logic and observe the expected register changes.</li>
+      <li>Open GNU SIM 8085 separately, enter the same program using the syntax supported by your installed version, assemble/load it, and execute it there.</li>
+      <li>Compare the accumulator and flags. Simulator commands and assembler syntax can vary by version.</li>
+    </ol>
+    <p class="note">The webpage does not directly control GNU SIM 8085. Use GNU SIM as the independent execution/verification tool.</p>
+  </section>
+</main>
+<footer>Mini project built with HTML, CSS and JavaScript · No installation or internet connection required.</footer>
+<script>
+const examples = {
+ add: `; Add 25H and 17H. Result: 3CH in A\\nMVI A, 25H\\nMVI B, 17H\\nADD B\\nHLT`,
+ sub: `; Subtract 12H from 35H. Result: 23H in A\\nMVI A, 35H\\nMVI B, 12H\\nSUB B\\nHLT`,
+ largest: `; Compare two values and keep the larger in A\\nMVI A, 22H\\nMVI B, 35H\\nCMP B\\nJC KEEP_A\\nMOV A, B\\nKEEP_A: HLT`,
+ count: `; Increment A three times\\nMVI A, 00H\\nINR A\\nINR A\\nINR A\\nHLT`,
+ store: `; Store 2AH in memory address 2050H\\nMVI A, 2AH\\nSTA 2050H\\nHLT`
+};
+let cpu, program=[], halted=false, sourceLines=[];
+const $=id=>document.getElementById(id);
+function fresh(){cpu={A:0,B:0,C:0,D:0,E:0,H:0,L:0,PC:0,Z:0,S:0,P:0,CY:0,memory:{}};halted=false;program=[];sourceLines=[];parseProgram();render();$('status').className='status';$('status').textContent='Program reset. Ready to execute.';$('log').textContent='Program loaded. Press Step or Run program.'}
+function parseProgram(){
+ const raw=$('code').value.split(/\\r?\\n/); const labels={}; const lines=[];
+ raw.forEach((line,i)=>{let s=line.split(';')[0].trim().toUpperCase();if(!s)return;const m=s.match(/^([A-Z_][A-Z0-9_]*):\\s*(.*)$/);if(m){labels[m[1]]=lines.length;s=m[2].trim();if(!s)return;}lines.push({text:s,original:i+1});});
+ program=lines.map(x=>({...x}));program.forEach((x,i)=>{const m=x.text.match(/^(JMP|JZ|JNZ|JC|JNC)\\s+([A-Z_][A-Z0-9_]*)$/);if(m&&labels[m[2]]!==undefined)x.target=labels[m[2]];});
+}
+function hex(n){return (n&255).toString(16).toUpperCase().padStart(2,'0')+'H'}
+function num(s){s=s.trim().toUpperCase();if(s.endsWith('H'))return parseInt(s.slice(0,-1),16);if(s.endsWith('D'))return parseInt(s.slice(0,-1),10);if(s.endsWith('B'))return parseInt(s.slice(0,-1),2);return parseInt(s,10)}
+function parity(n){let x=n&255,c=0;for(let i=0;i<8;i++)c+=(x>>i)&1;return c%2===0?1:0}
+function setFlags(n,carry=null){n&=255;cpu.Z=n===0?1:0;cpu.S=(n&128)?1:0;cpu.P=parity(n);if(carry!==null)cpu.CY=carry}
+function log(s){const el=$('log');el.textContent+=(el.textContent?'\\n':'')+s;el.scrollTop=el.scrollHeight}
+function execute(){
+ if(halted){$('status').className='status';$('status').textContent='Program has halted. Press Reset to run again.';return}
+ if(cpu.PC>=program.length){halted=true;$('status').className='status good';$('status').textContent='Program finished.';log('End of program.');return}
+ const line=program[cpu.PC], instr=line.text;let next=cpu.PC+1, msg=`${String(cpu.PC).padStart(2,'0')} | ${instr}`;
+ try{
+  let m;
+  if(instr==='HLT'){halted=true;msg+=' → CPU halted';}
+  else if((m=instr.match(/^MVI\\s+([ABCDEHL]|M|A),\\s*(\\w+)$/))){let v=num(m[2]);if(!Number.isFinite(v))throw Error('Invalid number');v&=255;if(m[1]==='M')cpu.memory[(cpu.H<<8)|cpu.L]=v;else cpu[m[1]]=v;msg+=` → ${m[1]} = ${hex(v)}`;}
+  else if((m=instr.match(/^MOV\\s+([ABCDEHL]|M|A),\\s*([ABCDEHL]|M|A)$/))){let read=r=>r==='M'?(cpu.memory[(cpu.H<<8)|cpu.L]||0):cpu[r];let v=read(m[2]);if(m[1]==='M')cpu.memory[(cpu.H<<8)|cpu.L]=v;else cpu[m[1]]=v;msg+=` → ${m[1]} = ${hex(v)}`;}
+  else if((m=instr.match(/^(ADD|SUB|CMP)\\s+([ABCDEHL]|M|A)$/))){let v=m[2]==='M'?(cpu.memory[(cpu.H<<8)|cpu.L]||0):cpu[m[2]],a=cpu.A,r;if(m[1]==='ADD'){r=a+v;cpu.A=r&255;setFlags(r,r>255?1:0);msg+=` → A = ${hex(cpu.A)}`;}else{r=a-v;setFlags(r,r<0?1:0);if(m[1]==='SUB')cpu.A=r&255;msg+=` → ${m[1]==='CMP'?'compare only':'A = '+hex(cpu.A)}`;}}
+  else if((m=instr.match(/^(INR|DCR)\\s+([ABCDEHL]|A)$/))){let r=(cpu[m[2]]+(m[1]==='INR'?1:-1))&255;cpu[m[2]]=r;setFlags(r);msg+=` → ${m[2]} = ${hex(r)}`;}
+  else if((m=instr.match(/^LXI\\s+(B|D|H),\\s*(\\w+)$/))){let v=num(m[2])&65535, pair=m[1]==='B'?['B','C']:m[1]==='D'?['D','E']:['H','L'];cpu[pair[0]]=(v>>8)&255;cpu[pair[1]]=v&255;msg+=` → ${m[1]} pair = ${v.toString(16).toUpperCase().padStart(4,'0')}H`;}
+  else if((m=instr.match(/^STA\\s+(\\w+)$/))){let a=num(m[1])&65535;cpu.memory[a]=cpu.A;msg+=` → [${a.toString(16).toUpperCase().padStart(4,'0')}H] = ${hex(cpu.A)}`;}
+  else if((m=instr.match(/^LDA\\s+(\\w+)$/))){let a=num(m[1])&65535;cpu.A=cpu.memory[a]||0;msg+=` → A = ${hex(cpu.A)}`;}
+  else if((m=instr.match(/^(JMP|JZ|JNZ|JC|JNC)\\s+([A-Z_][A-Z0-9_]*|\\w+)$/))){let take=m[1]==='JMP'||(m[1]==='JZ'&&cpu.Z)||(m[1]==='JNZ'&&!cpu.Z)||(m[1]==='JC'&&cpu.CY)||(m[1]==='JNC'&&!cpu.CY);let target=line.target;if(target===undefined){const t=num(m[2]);if(Number.isFinite(t)&&t>=0&&t<program.length)target=t;}if(take){if(target===undefined)throw Error('Label not found or target is not a valid instruction index');next=target;msg+=` → jump to instruction ${target}`;}else msg+=' → condition false';}
+  else throw Error('Unsupported instruction. Check the supported subset in the project notes.');
+  cpu.PC=next;render();log(msg);$('status').className='status good';$('status').textContent=halted?'Program halted successfully.':`Executed instruction ${cpu.PC>0?cpu.PC:0} successfully.`;
+ }catch(e){$('status').className='status bad';$('status').textContent=e.message;log('ERROR: '+e.message);halted=true}
+}
+function render(){
+ $('registers').innerHTML=['A','B','C','D','E','H','L'].map(r=>`<div class="reg"><span>Register ${r}</span><strong>${hex(cpu[r])}</strong><div class="note">${cpu[r]}</div></div>`).join('');
+ $('flags').innerHTML=[['Sign',cpu.S],['Zero',cpu.Z],['Aux carry',0],['Parity',cpu.P],['Carry',cpu.CY]].map(([n,v])=>`<div class="flag">${n}: <b>${v}</b></div>`).join('');
+ $('pc').textContent=String(cpu.PC).padStart(2,'0');const entries=Object.entries(cpu.memory).sort((a,b)=>Number(a[0])-Number(b[0]));
+ $('memory').innerHTML=(entries.length?entries:[['2050',0]]).map(([a,v])=>{let address=Number(a);return `<tr><td>${address.toString(16).toUpperCase().padStart(4,'0')}H</td><td>${hex(v)}</td><td>${v}</td></tr>`}).join('');
+}
+$('loadBtn').onclick=()=>{$('code').value=examples[$('examples').value];fresh()};
+$('resetBtn').onclick=()=>fresh();
+$('stepBtn').onclick=()=>{if(!program.length)parseProgram();execute()};
+$('runBtn').onclick=()=>{if(!program.length)parseProgram();let guard=0;while(!halted&&cpu.PC<program.length&&guard++<500)execute();if(guard>=500){halted=true;$('status').className='status bad';$('status').textContent='Stopped after 500 steps to prevent an infinite loop.'}};
+$('clearBtn').onclick=()=>$('log').textContent='';
+$('code').addEventListener('change',()=>{fresh()});
+fresh();
+</script>
+</body>
+</html>
